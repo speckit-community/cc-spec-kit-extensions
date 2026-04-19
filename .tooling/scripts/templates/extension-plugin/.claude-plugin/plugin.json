@@ -1,0 +1,14 @@
+{
+  "name": "speckit-ext-{EXT_ID}",
+  "version": "{PLUGIN_VERSION}",
+  "description": "{EXT_DESCRIPTION}",
+  "author": {
+    "name": "{EXT_AUTHOR}"
+  },
+  "license": "{EXT_LICENSE}",
+  "keywords": [
+    "spec-kit",
+    "extension",
+    "{EXT_ID}"
+  ]
+}

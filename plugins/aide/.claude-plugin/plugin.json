@@ -1,0 +1,19 @@
+{
+  "name": "speckit-ext-aide",
+  "version": "1.0.0",
+  "description": "A structured 7-step workflow for building new projects from scratch with AI assistants — from vision through implementation.",
+  "author": {
+    "name": "mnriem"
+  },
+  "license": "MIT",
+  "keywords": [
+    "spec-kit",
+    "extension",
+    "workflow",
+    "project-management",
+    "ai-driven",
+    "new-project",
+    "planning",
+    "experimental"
+  ]
+}

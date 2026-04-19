@@ -1,0 +1,4 @@
+{
+  "catalog_url": "https://raw.githubusercontent.com/github/spec-kit/main/extensions/catalog.community.json",
+  "extensions": ["verify", "aide"]
+}

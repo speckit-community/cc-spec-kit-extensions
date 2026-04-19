@@ -1,0 +1,175 @@
+name: Regenerate Extensions
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6:00 AM UTC
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force regeneration even if versions match'
+        required: false
+        default: 'false'
+        type: boolean
+      extension_id:
+        description: 'Specific extension ID to regenerate (blank = all outdated)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-upstream:
+    name: Check for upstream updates
+    runs-on: ubuntu-latest
+    outputs:
+      has_updates: ${{ steps.check.outputs.has_updates }}
+      matrix: ${{ steps.check.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check upstream releases
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ inputs.force }}" = "true" ]; then
+            # Force mode: build matrix from extensions.json directly
+            echo "has_updates=true" >> "$GITHUB_OUTPUT"
+            if [ -n "${{ inputs.extension_id }}" ]; then
+              echo 'matrix=[{"id":"${{ inputs.extension_id }}","current_version":"forced","upstream_version":"forced"}]' >> "$GITHUB_OUTPUT"
+            else
+              python3 -c "
+          import json
+          with open('.tooling/extensions.json') as f:
+              data = json.load(f)
+          matrix = [{'id': e['id'], 'current_version': 'forced', 'upstream_version': 'forced'} for e in data['extensions']]
+          print(f'matrix={json.dumps(matrix)}')
+          " >> "$GITHUB_OUTPUT"
+            fi
+          else
+            ./.tooling/scripts/check-upstream.sh
+          fi
+
+  regenerate:
+    name: Regenerate ${{ matrix.ext.id }}
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_updates == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ext: ${{ fromJson(needs.check-upstream.outputs.matrix) }}
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Regenerate extension plugin
+        env:
+          FORCE_FLAG: ${{ inputs.force == true && '--force' || '' }}
+          VERSION_FLAG: ${{ matrix.ext.upstream_version != 'forced' && format('--version {0}', matrix.ext.upstream_version) || '' }}
+          DOWNLOAD_URL: ${{ matrix.ext.download_url }}
+        run: |
+          echo "Regenerating extension: ${{ matrix.ext.id }}"
+          echo "  Current: ${{ matrix.ext.current_version }}"
+          echo "  Upstream: ${{ matrix.ext.upstream_version }}"
+          echo "  Download: $DOWNLOAD_URL"
+          echo ""
+
+          ARGS="${{ matrix.ext.id }}"
+          [ -n "$DOWNLOAD_URL" ] && ARGS="$ARGS --from $DOWNLOAD_URL"
+          [ -n "$FORCE_FLAG" ] && ARGS="$ARGS $FORCE_FLAG"
+          [ -n "$VERSION_FLAG" ] && ARGS="$ARGS $VERSION_FLAG"
+
+          ./.tooling/scripts/generate-extension-plugin.sh $ARGS
+
+      - name: Sync plugin.json with catalog metadata
+        run: |
+          EXT_ID="${{ matrix.ext.id }}"
+          PLUGIN_JSON="plugins/$EXT_ID/.claude-plugin/plugin.json"
+
+          python3 -c "
+          import json
+
+          with open('$PLUGIN_JSON') as f:
+              plugin = json.load(f)
+
+          # Update from catalog metadata
+          plugin['version'] = '${{ matrix.ext.upstream_version }}'
+          plugin['description'] = '''${{ matrix.ext.catalog_description }}'''
+          plugin['author'] = {'name': '${{ matrix.ext.catalog_author }}'}
+          plugin['license'] = '${{ matrix.ext.catalog_license }}'
+
+          tags = json.loads('${{ toJson(matrix.ext.catalog_tags) }}')
+          plugin['keywords'] = ['spec-kit', 'extension'] + tags
+
+          with open('$PLUGIN_JSON', 'w') as f:
+              json.dump(plugin, f, indent=2)
+              f.write('\n')
+          "
+
+          echo "✓ plugin.json synced with catalog metadata"
+          cat "$PLUGIN_JSON"
+
+      - name: Validate generated output
+        run: |
+          EXT_ID="${{ matrix.ext.id }}"
+
+          # Hard fail if extension.yml is missing for either platform
+          for variant in bash ps; do
+            ext_yml="plugins/$EXT_ID/assets/$variant/.specify/extensions/$EXT_ID/extension.yml"
+            if [ ! -f "$ext_yml" ]; then
+              echo "❌ FATAL: Missing $ext_yml"
+              exit 1
+            fi
+            echo "✓ $ext_yml exists"
+          done
+
+          # Verify command skills exist
+          for variant in bash ps; do
+            skill_count=$(find "plugins/$EXT_ID/assets/$variant/.claude/skills" -maxdepth 1 -name "speckit-${EXT_ID}-*" -type d 2>/dev/null | wc -l)
+            if [ "$skill_count" -eq 0 ]; then
+              echo "❌ FATAL: No command skills found for $variant"
+              exit 1
+            fi
+            echo "✓ $variant: $skill_count command skill(s)"
+          done
+
+          echo "✅ Validation passed for $EXT_ID"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: regenerate ${{ matrix.ext.id }} extension (${{ matrix.ext.current_version }} → ${{ matrix.ext.upstream_version }})"
+          title: "⬆️ Update ${{ matrix.ext.id }} extension to ${{ matrix.ext.upstream_version }}"
+          body: |
+            Automated regeneration of the **${{ matrix.ext.id }}** extension plugin.
+
+            | Field | Value |
+            |-------|-------|
+            | Extension | `${{ matrix.ext.id }}` |
+            | Previous version | `${{ matrix.ext.current_version }}` |
+            | New version | `${{ matrix.ext.upstream_version }}` |
+
+            ---
+
+            *Generated by the [Regenerate Extensions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow.*
+          branch: "auto/update-${{ matrix.ext.id }}-${{ matrix.ext.upstream_version }}"
+          labels: "automated,extension-update"
+          delete-branch: true

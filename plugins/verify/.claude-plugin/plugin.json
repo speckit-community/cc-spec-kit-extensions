@@ -1,0 +1,18 @@
+{
+  "name": "speckit-ext-verify",
+  "version": "1.0.3",
+  "description": "Post-implementation quality gate that validates implemented code against specification artifacts.",
+  "author": {
+    "name": "ismaelJimenez"
+  },
+  "license": "MIT",
+  "keywords": [
+    "spec-kit",
+    "extension",
+    "verification",
+    "quality-gate",
+    "implementation",
+    "spec-adherence",
+    "compliance"
+  ]
+}
