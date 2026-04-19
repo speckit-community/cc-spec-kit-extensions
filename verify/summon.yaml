@@ -1,0 +1,9 @@
+name: speckit-ext-verify
+description: "Verify spec artifacts for completeness, consistency, and quality — Extension plugin for Spec Kit"
+system_requirements:
+  - name: git
+    optional: true
+    reason: "May be used by extension scripts for version control operations"
+  - name: jq
+    optional: true
+    reason: "Used for safe JSON construction in shell scripts; a pure-bash fallback is included when jq is unavailable"

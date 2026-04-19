@@ -1,0 +1,9 @@
+name: speckit-ext-aide
+description: "Vision and requirements analysis for AI-driven development — Extension plugin for Spec Kit"
+system_requirements:
+  - name: git
+    optional: true
+    reason: "May be used by extension scripts for version control operations"
+  - name: jq
+    optional: true
+    reason: "Used for safe JSON construction in shell scripts; a pure-bash fallback is included when jq is unavailable"

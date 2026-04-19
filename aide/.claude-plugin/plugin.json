@@ -1,0 +1,14 @@
+{
+  "name": "speckit-ext-aide",
+  "version": "1.0.0",
+  "description": "Vision and requirements analysis for AI-driven development",
+  "author": {
+    "name": "spec-kit-community"
+  },
+  "license": "MIT",
+  "keywords": [
+    "spec-kit",
+    "extension",
+    "aide"
+  ]
+}

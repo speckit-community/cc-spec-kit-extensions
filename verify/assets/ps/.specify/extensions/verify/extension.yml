@@ -1,0 +1,40 @@
+schema_version: "1.0"
+
+extension:
+  id: verify
+  name: "Spec Verification"
+  version: "1.0.0"
+  description: "Verify spec artifacts for completeness, consistency, and quality"
+  author: spec-kit-community
+  repository: https://github.com/speckit-community/cc-spec-kit-core-dev
+  license: MIT
+
+requires:
+  speckit_version: ">=0.2.0"
+  tools: []
+
+provides:
+  commands:
+    - name: speckit.verify.check
+      file: commands/speckit.verify.check.md
+      description: "Run verification checks on spec, plan, and task artifacts"
+
+hooks:
+  after_tasks:
+    command: speckit.verify.check
+    optional: true
+    prompt: "Run verification checks on generated tasks?"
+    description: "Auto-verify after task generation"
+  after_implement:
+    command: speckit.verify.check
+    optional: true
+    prompt: "Run verification checks after implementation?"
+    description: "Auto-verify after implementation completes"
+
+tags:
+  - "verify"
+  - "quality"
+  - "validation"
+
+config:
+  defaults: {}

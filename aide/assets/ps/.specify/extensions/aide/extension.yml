@@ -1,0 +1,44 @@
+schema_version: "1.0"
+
+extension:
+  id: aide
+  name: "AIDE Workflow"
+  version: "1.0.0"
+  description: "Vision and requirements analysis for AI-driven development"
+  author: spec-kit-community
+  repository: https://github.com/speckit-community/cc-spec-kit-core-dev
+  license: MIT
+
+requires:
+  speckit_version: ">=0.2.0"
+  tools: []
+
+provides:
+  commands:
+    - name: speckit.aide.vision
+      file: commands/speckit.aide.vision.md
+      description: "Create or refine the project vision document"
+    - name: speckit.aide.requirements
+      file: commands/speckit.aide.requirements.md
+      description: "Generate structured requirements from vision and user input"
+
+hooks:
+  before_specify:
+    command: speckit.aide.vision
+    optional: true
+    prompt: "Review or create project vision before specification?"
+    description: "Ensure project vision is defined before feature specification"
+  before_plan:
+    command: speckit.aide.requirements
+    optional: true
+    prompt: "Generate structured requirements before planning?"
+    description: "Create requirements analysis before implementation planning"
+
+tags:
+  - "aide"
+  - "vision"
+  - "requirements"
+  - "analysis"
+
+config:
+  defaults: {}
