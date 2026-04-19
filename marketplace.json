@@ -1,0 +1,21 @@
+{
+  "name": "speckit-extensions",
+  "owner": {
+    "name": "Spec Kit Community"
+  },
+  "metadata": {
+    "description": "Community extension plugins for Spec Kit"
+  },
+  "plugins": [
+    {
+      "name": "speckit-ext-verify",
+      "source": "./plugins/verify",
+      "description": "Post-implementation quality gate that validates implemented code against specification artifacts."
+    },
+    {
+      "name": "speckit-ext-aide",
+      "source": "./plugins/aide",
+      "description": "A structured 7-step workflow for building new projects from scratch with AI assistants — from vision through implementation."
+    }
+  ]
+}
