@@ -99,23 +99,28 @@ jobs:
           ./.tooling/scripts/generate-extension-plugin.sh $ARGS
 
       - name: Sync plugin.json with catalog metadata
+        env:
+          PLUGIN_VERSION: ${{ matrix.ext.upstream_version }}
+          PLUGIN_DESCRIPTION: ${{ matrix.ext.catalog_description }}
+          PLUGIN_AUTHOR: ${{ matrix.ext.catalog_author }}
+          PLUGIN_LICENSE: ${{ matrix.ext.catalog_license }}
+          PLUGIN_TAGS_JSON: ${{ toJson(matrix.ext.catalog_tags) }}
         run: |
           EXT_ID="${{ matrix.ext.id }}"
           PLUGIN_JSON="plugins/$EXT_ID/.claude-plugin/plugin.json"
 
           python3 -c "
-          import json
+          import json, os
 
           with open('$PLUGIN_JSON') as f:
               plugin = json.load(f)
 
-          # Update from catalog metadata
-          plugin['version'] = '${{ matrix.ext.upstream_version }}'
-          plugin['description'] = '''${{ matrix.ext.catalog_description }}'''
-          plugin['author'] = {'name': '${{ matrix.ext.catalog_author }}'}
-          plugin['license'] = '${{ matrix.ext.catalog_license }}'
+          plugin['version'] = os.environ['PLUGIN_VERSION']
+          plugin['description'] = os.environ['PLUGIN_DESCRIPTION']
+          plugin['author'] = {'name': os.environ['PLUGIN_AUTHOR']}
+          plugin['license'] = os.environ['PLUGIN_LICENSE']
 
-          tags = json.loads('${{ toJson(matrix.ext.catalog_tags) }}')
+          tags = json.loads(os.environ['PLUGIN_TAGS_JSON'])
           plugin['keywords'] = ['spec-kit', 'extension'] + tags
 
           with open('$PLUGIN_JSON', 'w') as f:
