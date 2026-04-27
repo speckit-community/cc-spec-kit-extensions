@@ -120,7 +120,7 @@ Read `.specify/extensions/.registry` (JSON). Add or update the entry for this ex
 ```json
 {
   "aide": {
-    "version": "1.0.0",
+    "version": "1.1.0",
     "source": "local",
     "manifest_hash": "sha256:{computed from extension.yml}",
     "enabled": true,
