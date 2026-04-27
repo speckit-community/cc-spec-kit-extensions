@@ -52,7 +52,7 @@ jobs:
           import json
           with open('.tooling/extensions.json') as f:
               data = json.load(f)
-          matrix = [{'id': e['id'], 'current_version': 'forced', 'upstream_version': 'forced'} for e in data['extensions']]
+          matrix = [{'id': e if isinstance(e, str) else e['id'], 'current_version': 'forced', 'upstream_version': 'forced'} for e in data['extensions']]
           print(f'matrix={json.dumps(matrix)}')
           " >> "$GITHUB_OUTPUT"
             fi
